@@ -1,0 +1,111 @@
+movement:
+the movement is going to have two components: simple side-to-side movement, and a jump with height depening on how long the player holds the key for.
+
+func move:
+    #key presses are handled in the keypressed function.
+    #when the right or left arrows are pressed, xmove is set to 10 or -10
+    #look below for details of when space is pressed
+    ymove += 10  //gravity pulls them down
+    if grounded != true  //if the player is in the air:
+    {
+        if jumping = true  //if they are still holding the jump key
+        {
+            ymove -= jumpspeed  //reduce the rate at which the player's vertical momentum decreases
+            //jumpspeed cannot start higher than the gravity constant, or the player would speed up at first as they jumped.
+            jumpspeed += 1   //reduce the effect of that decrease
+            if jumpspeed <= 0 or ymove >= 0 //stops holding the jump key having an inverse effect
+            {
+                jumping = false
+            }
+        }
+    }
+
+in keypressed:
+    if keypressed == space  //when the player presses the jump key
+    {
+        if grounded()  //if they are on the ground:
+        {
+            jumping = true    //set the player as jumping
+            ymove = -40    //give them an initial speed to get airborne
+        }
+
+    }
+
+in keyreleased:
+    if keyreleased == space
+    {
+        jumping = false
+    }
+
+grounded will be checked in update, referring to a special collision function in the creature class,
+that the player and the enemies inherit from.
+it can check where the creature is standing by looking at their x coordinates and only comparing their position with
+platforms around them, by splitting the platforms into overlapping quadrants- where the game finds out which quadrant the player is in, otherwise it would check every creature's position against every platform, which would be far from optimal
+in update:
+    if player.body.x >= zone1 && player.body.x <= zone2
+    {
+        for i in range(zone1, zone2)
+        {
+            g_value = player.grounding(platforms[i])
+            if g_value >= 1
+            {
+                if g_value == 2
+                {
+                ymove = -10  //counteracts gravity, so the player doesn't fall through the platform.
+                }
+                else:
+
+            }
+        }
+    }
+
+within that collision module, it will check if the player's feet are touching the ground: and if so, it will return true, providing a  resistive force against gravity.
+this will work the same for the enemies as well.
+the module also calculates the normal collision, so the player doesn't need to worry about going through walls or ceilings
+
+the platform collision has three possible return values: 0, 1, and 2.
+0 means no collision. 1 means normal collison. 2 means feet collide, so they must be standing on the platform.
+
+func grounding(sprite platform):
+    float player_x_min = player.position.x
+    float player_x_max = player.position.x + playerbounds.x
+    float player_y_min = player.position.y
+    float player_y_max = player.position.y + playerbounds.y
+    float player_f_min = player.position.y + ( 4 * (playerbounds.y / 5))   //this means the hitbox only covers the player's feet.
+    float platform_x_min = platform.position.x
+    float platform_x_max = platform.position.x + platformbounds.x
+    float platform_y_min = platform.position.y
+    float platform_y_max = platform.position.y + platformbounds.y
+    if (
+        player_y_min >= platform_y_min && player_y_min <= platform_y_max || player_y_max >= platform_y_min && player_y_max <= platform_y_max)
+      {
+        if (
+          player_x_min >= platform_x_min && player_x_min <= platform_x_max || player_x_max >= platform_x_min && player_x_max <= platform_x_max)
+        {
+          if player_f_min >= platform_y_min && player_f_min <= platform_y_max || player_y_max >= platform_y_min && player_y_max <= platform_y_max)
+          {
+            return 2
+          }
+          else
+          {
+          return 1
+          }
+        }
+        else
+        {
+        return 0
+        }
+      }
+      else
+      {
+      return 0
+      }
+    }
+
+USP: the spirit clone
+basically, the ability to make a simple object appaer for a short period of time. i want it to do 3 things;
+-kill enemies
+-pick up items
+-press buttons
+
+the idea is that you can spawn it by clicking wherever you want it to appear, and in return, you lose 1 health
